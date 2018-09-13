@@ -1071,8 +1071,8 @@ namespace SwitcheoTrader.NetCore.Business
         /// Place a trade
         /// </summary>
         /// <param name="tradeParams">Trade parameters</param>
-        /// <returns>TradeResponse object</returns>
-        public TradeResponse PlaceTrade(TradeParams tradeParams)
+        /// <returns>Order object</returns>
+        public Order PlaceTrade(TradeParams tradeParams)
         {
             _tradeNumber++;
             if (_botSettings.tradingStatus == TradeStatus.LiveTrading)
@@ -1088,27 +1088,16 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="tradeParams">Trade parameters</param>
         /// <returns>TradeResponse object</returns>
-        private TradeResponse PlacePaperTrade(TradeParams tradeParams)
+        private Order PlacePaperTrade(TradeParams tradeParams)
         {
-            OrderType orderType;
-            TimeInForce TIF;
-            TradeType tradeType;
-            Enum.TryParse(tradeParams.type, out orderType);
-            Enum.TryParse(tradeParams.timeInForce, out TIF);
-            Enum.TryParse(tradeParams.side, out tradeType);
-            var response = new TradeResponse
+            var response = new Order
             {
-                clientOrderId = $"PaperTrade_{_tradeNumber}",
-                executedQty = tradeParams.quantity,
-                orderId = _tradeNumber,
-                origQty = tradeParams.quantity,
-                price = tradeParams.price,
-                side = tradeType,
-                status = OrderStatus.FILLED,
-                symbol = tradeParams.symbol,
-                timeInForce = TIF,
-                transactTime = _dtHelper.UTCtoUnixTime(),
-                type = orderType
+                created_at = DateTimeOffset.UtcNow,
+                offer_amount = tradeParams.quantity.ToString(),
+                offer_asset_id = _asset,
+                want_amount = tradeParams.quantity.ToString(),
+                want_asset_id = _pair,
+                id = $"PaperTrade_{_tradeNumber}"
             };
 
             return response;
@@ -1128,10 +1117,9 @@ namespace SwitcheoTrader.NetCore.Business
             if (_openStopLossList.Count == 0 || currentPrice >= _openStopLossList[0].price)
                 return null;
 
-            var trade = new TradeResponse
+            var trade = new Order
             {
-                orderId = _openStopLossList[0].orderId,
-                clientOrderId = _openStopLossList[0].clientOrderId
+                id = _openStopLossList[0].id
             };
 
             var stoppedOut = CheckTradeStatus(trade);
@@ -1398,7 +1386,7 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="orderId">OrderId of trade</param>
         /// <returns>Boolean value of filled status</returns>
-        public bool CheckTradeStatus(TradeResponse trade)
+        public bool CheckTradeStatus(Order trade)
         {
             var orderStatus = GetOrderStatus(trade);
 
