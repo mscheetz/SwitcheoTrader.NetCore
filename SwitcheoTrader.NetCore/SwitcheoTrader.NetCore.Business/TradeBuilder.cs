@@ -2,6 +2,7 @@
 using Switcheo.NetCore;
 using SwitcheoApi.NetCore.Entities;
 using SwitcheoTrader.NetCore.Business.Interfaces;
+using SwitcheoTrader.NetCore.Core;
 using SwitcheoTrader.NetCore.Data;
 using SwitcheoTrader.NetCore.Data.Interfaces;
 using SwitcheoTrader.NetCore.Entities;
@@ -1071,8 +1072,8 @@ namespace SwitcheoTrader.NetCore.Business
         /// Place a trade
         /// </summary>
         /// <param name="tradeParams">Trade parameters</param>
-        /// <returns>TradeResponse object</returns>
-        public TradeResponse PlaceTrade(TradeParams tradeParams)
+        /// <returns>Order object</returns>
+        public Order PlaceTrade(TradeParams tradeParams)
         {
             _tradeNumber++;
             if (_botSettings.tradingStatus == TradeStatus.LiveTrading)
@@ -1087,28 +1088,18 @@ namespace SwitcheoTrader.NetCore.Business
         /// Place a paper trade for testing purposes
         /// </summary>
         /// <param name="tradeParams">Trade parameters</param>
-        /// <returns>TradeResponse object</returns>
-        private TradeResponse PlacePaperTrade(TradeParams tradeParams)
+        /// <returns>Order object</returns>
+        private Order PlacePaperTrade(TradeParams tradeParams)
         {
-            OrderType orderType;
-            TimeInForce TIF;
-            TradeType tradeType;
-            Enum.TryParse(tradeParams.type, out orderType);
-            Enum.TryParse(tradeParams.timeInForce, out TIF);
-            Enum.TryParse(tradeParams.side, out tradeType);
-            var response = new TradeResponse
+            var response = new Order
             {
-                clientOrderId = $"PaperTrade_{_tradeNumber}",
-                executedQty = tradeParams.quantity,
-                orderId = _tradeNumber,
-                origQty = tradeParams.quantity,
-                price = tradeParams.price,
-                side = tradeType,
-                status = OrderStatus.FILLED,
-                symbol = tradeParams.symbol,
-                timeInForce = TIF,
-                transactTime = _dtHelper.UTCtoUnixTime(),
-                type = orderType
+                id = $"PaperTrade_{_tradeNumber}",
+                offer_amount = tradeParams.quantity.ToString(),
+                offer_asset_id = _pair,               
+                want_amount = tradeParams.quantity.ToString(),
+                want_asset_id = _asset,
+                status = "processed",
+                order_status = "completed"
             };
 
             return response;
@@ -1128,10 +1119,9 @@ namespace SwitcheoTrader.NetCore.Business
             if (_openStopLossList.Count == 0 || currentPrice >= _openStopLossList[0].price)
                 return null;
 
-            var trade = new TradeResponse
+            var trade = new Order
             {
-                orderId = _openStopLossList[0].orderId,
-                clientOrderId = _openStopLossList[0].clientOrderId
+                id = _openStopLossList[0].id
             };
 
             var stoppedOut = CheckTradeStatus(trade);
@@ -1189,12 +1179,12 @@ namespace SwitcheoTrader.NetCore.Business
         {
             var tradeComplete = false;
             int i = 0;
-            TradeResponse trade = null;
+            Order trade = null;
             while (!tradeComplete && i < 2)
             {
                 trade = MakeTrade(TradeType.BUY, orderPrice);
 
-                if (trade == null || trade.clientOrderId == null)
+                if (trade == null || trade.id == null)
                 {
                     return false;
                 }
@@ -1227,13 +1217,16 @@ namespace SwitcheoTrader.NetCore.Business
 
             UpdateBalances();
 
-            CaptureTransaction(orderPrice, trade.origQty, trade.transactTime, tradeType);
+            var quantity = 0M;
+            Decimal.TryParse(trade.offer_amount, out quantity);
+
+            CaptureTransaction(orderPrice, quantity, trade.created_at.ToUnixTimeMilliseconds(), tradeType);
 
             _lastBuy = orderPrice;
 
             if (stopLoss)
             {
-                var stopLossResponse = PlaceStopLoss(orderPrice, trade.origQty);
+                var stopLossResponse = PlaceStopLoss(orderPrice, quantity);
             }
 
             return CheckTradeSuccess(TradeType.BUY);
@@ -1250,14 +1243,14 @@ namespace SwitcheoTrader.NetCore.Business
         {
             var tradeComplete = false;
             int i = 0;
-            TradeResponse trade = null;
+            Order trade = null;
             while (!tradeComplete && i < 2)
             {
                 CancelStopLoss();
 
                 trade = MakeTrade(TradeType.SELL, orderPrice);
 
-                if (trade == null || trade.clientOrderId == null)
+                if (trade == null || trade.id == null)
                 {
                     return false;
                 }
@@ -1293,7 +1286,10 @@ namespace SwitcheoTrader.NetCore.Business
 
             UpdateBalances();
 
-            CaptureTransaction(orderPrice, trade.origQty, trade.transactTime, tradeType);
+            var quantity = 0M;
+            Decimal.TryParse(trade.offer_amount, out quantity);
+
+            CaptureTransaction(orderPrice, quantity, trade.created_at.ToUnixTimeMilliseconds(), tradeType);
 
             _lastSell = orderPrice;
 
@@ -1358,7 +1354,7 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="trade">TradeReponse object</param>
         /// <returns>Boolean value on trade validation</returns>
-        public bool ValidateTradeComplete(TradeResponse trade)
+        public bool ValidateTradeComplete(Order trade)
         {
             bool tradeComplete = false;
             int i = 0;
@@ -1398,7 +1394,7 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="orderId">OrderId of trade</param>
         /// <returns>Boolean value of filled status</returns>
-        public bool CheckTradeStatus(TradeResponse trade)
+        public bool CheckTradeStatus(Order trade)
         {
             var orderStatus = GetOrderStatus(trade);
 
@@ -1656,7 +1652,7 @@ namespace SwitcheoTrader.NetCore.Business
 
             var result = CancelTrade(tradeParams);
 
-            var trade = new TradeResponse
+            var trade = new Order
             {
                 orderId = _openStopLossList[0].orderId,
                 clientOrderId = _openStopLossList[0].clientOrderId
@@ -1677,8 +1673,8 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="orderPrice">Trade price</param>
         /// <param name="quantity">Quantity to trade</param>
-        /// <returns>TradeResponse object</returns>
-        public TradeResponse PlaceStopLoss(decimal orderPrice, decimal quantity)
+        /// <returns>Order object</returns>
+        public Order PlaceStopLoss(decimal orderPrice, decimal quantity)
         {
             decimal stopLossPercent = (decimal)Math.Abs(_botSettings.stopLoss) / 100;
             decimal stopLossPrice = orderPrice - (orderPrice * stopLossPercent);
@@ -1718,10 +1714,10 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="tradeType">TradeType object</param>
         /// <param name="orderPrice">Trade price</param>
-        /// <returns>TradeResponse object</returns>
-        public TradeResponse MakeTrade(TradeType tradeType, decimal orderPrice)
+        /// <returns>Order object</returns>
+        public Order MakeTrade(TradeType tradeType, decimal orderPrice)
         {
-            TradeResponse response = null;
+            Order response = null;
             int i = 0;
             while (response == null && i < 5)
             {
@@ -1808,7 +1804,7 @@ namespace SwitcheoTrader.NetCore.Business
         /// <returns>Boolen when complete</returns>
         public bool CancelOpenOrders()
         {
-            var openOrders = _exchBldr.GetOpenOrders(_symbol);
+            var openOrders = _switcheo.GetOpenOrders();
 
             while (openOrders != null && openOrders.Count() > 0)
             {
@@ -1825,7 +1821,7 @@ namespace SwitcheoTrader.NetCore.Business
                     _fileRepo.LogSignal(signal);
                     CancelTrade(openOrders[i].orderId, openOrders[i].clientOrderId, openOrders[i].side.ToString());
                 }
-                openOrders = _exchBldr.GetOpenOrders(_symbol);
+                openOrders = _switcheo.GetOpenOrders();
             }
 
             return true;
@@ -1837,7 +1833,7 @@ namespace SwitcheoTrader.NetCore.Business
         /// <returns>Array of decimals</returns>
         public decimal[] GetLastBuySellPrice()
         {
-            var orders = _exchBldr.GetLatestOrders(_symbol);
+            var orders = GetLatestOrders(_symbol);
 
             if (orders == null)
             {
@@ -1854,29 +1850,90 @@ namespace SwitcheoTrader.NetCore.Business
             };
         }
 
+        public Order[] GetLatestOrders(string symbol)
+        {
+            //TODO: finish
+            return new Order[0];
+
+            // FROM BOT
+            //var response = GetOrders(symbol);
+            //int i = 0;
+            //while (response == null && i < 3)
+            //{
+            //    response = GetOrders(symbol);
+            //    i++;
+            //}
+
+            //if (response == null)
+            //{
+            //    return null;
+            //}
+
+            //var orderReverse = response.Where(o => o.status == OrderStatus.FILLED)
+            //                            .OrderByDescending(o => o.time).ToArray();
+
+            //var orderList = new List<OrderResponse>();
+
+            //var buyFound = false;
+            //var sellFound = false;
+            //for (i = 0; i < orderReverse.Length; i++)
+            //{
+            //    if (orderReverse[i].side == TradeType.BUY && !buyFound)
+            //    {
+            //        orderList.Add(orderReverse[i]);
+            //        buyFound = true;
+            //    }
+            //    if (orderReverse[i].side == TradeType.SELL && !sellFound)
+            //    {
+            //        orderList.Add(orderReverse[i]);
+            //        sellFound = true;
+            //    }
+
+            //    if (buyFound && sellFound)
+            //    {
+            //        break;
+            //    }
+            //}
+
+            //return orderList.ToArray();
+        }
+
         /// <summary>
         /// Open orders check
         /// </summary>
         /// <returns>OpenOrderDetail of open order</returns>
         public OpenOrderDetail OpenOrdersCheck()
         {
+            OpenOrderDetail ooDetail = null;
             if (_botSettings.tradingStatus == TradeStatus.LiveTrading)
-                return _exchBldr.OpenOrdersExist(_symbol);
-            else
-                return null;
+            {
+                var orders = _switcheo.GetOpenOrders();
+
+                var price = 0M;
+                //TODO: get values
+                //Decimal.TryParse()
+
+                ooDetail = new OpenOrderDetail
+                {
+                    price = price,
+                    timestamp = orders[0].created_at.ToUnixTimeMilliseconds()
+                };
+            }
+
+            return ooDetail;
         }
 
         /// <summary>
         /// Cancel a trade
         /// </summary>
-        /// <param name="tradeParams">CancelTrade parameters</param>
-        /// <returns>TradeResponse object</returns>
-        public TradeResponse CancelTrade(CancelTradeParams tradeParams)
+        /// <param name="id">Id of order to cancel</param>
+        /// <returns>Order object</returns>
+        public Order CancelTrade(string id)
         {
             if (_botSettings.tradingStatus == TradeStatus.LiveTrading)
-                return _exchBldr.DeleteTrade(tradeParams);
+                return _switcheo.CancelOrder(id);
             else if (_botSettings.tradingStatus == TradeStatus.PaperTrading)
-                return CancelPaperTrade(tradeParams);
+                return CancelPaperTrade(id);
             else
                 return null;
         }
@@ -1884,17 +1941,15 @@ namespace SwitcheoTrader.NetCore.Business
         /// <summary>
         /// Cancel a paper trade for testing purposes
         /// </summary>
-        /// <param name="tradeParams">Trade parameters</param>
-        /// <returns>TradeResponse object</returns>
-        public TradeResponse CancelPaperTrade(CancelTradeParams tradeParams)
+        /// <param name="id">Id of order to cancel</param>
+        /// <returns>Order object</returns>
+        public Order CancelPaperTrade(string id)
         {
-            var response = new TradeResponse
+            var response = new Order
             {
-                clientOrderId = $"PaperTrade_{_tradeNumber}",
-                orderId = _tradeNumber,
-                status = OrderStatus.FILLED,
-                symbol = tradeParams.symbol,
-                transactTime = _dtHelper.UTCtoUnixTime()
+                id = $"PaperTrade_{_tradeNumber}",
+                status = "processed",
+                order_status = "cancelled"
             };
 
             return response;
@@ -1909,12 +1964,12 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="orderId">OrderId of trade</param>
         /// <returns>OrderResponse</returns>
-        public OrderResponse GetOrderStatus(TradeResponse trade)
+        public Order GetOrderStatus(Order trade)
         {
             if (_botSettings.tradingStatus == TradeStatus.LiveTrading)
-                return _exchBldr.GetOrderDetail(trade, _symbol);
+                return _switcheo.GetOrder(trade.id);
             else if (_botSettings.tradingStatus == TradeStatus.PaperTrading)
-                return GetPaperOrderStatus(trade.orderId);
+                return GetPaperOrderStatus(trade.id);
             else
                 return null;
         }
@@ -1924,12 +1979,12 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="orderId">OrderId of trade</param>
         /// <returns>OrderResponse</returns>
-        public OrderResponse GetPaperOrderStatus(long orderId)
+        public Order GetPaperOrderStatus(string orderId)
         {
-            var response = new OrderResponse
+            var response = new Order
             {
-                orderId = orderId,
-                status = OrderStatus.FILLED
+                id = orderId,
+                order_status = "completed"
             };
 
             return response;

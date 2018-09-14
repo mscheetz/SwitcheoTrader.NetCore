@@ -6,11 +6,12 @@
 
   <ItemGroup>
     <PackageReference Include="DateTimeHelpers" Version="1.2.0" />
-    <PackageReference Include="SwitcheoApi.NetCore" Version="1.2.4" />
+    <PackageReference Include="SwitcheoApi.NetCore" Version="1.2.5" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SwitcheoTrader.NetCore.Business.Interfaces\SwitcheoTrader.NetCore.Business.Interfaces.csproj" />
+    <ProjectReference Include="..\SwitcheoTrader.NetCore.Core\SwitcheoTrader.NetCore.Core.csproj" />
     <ProjectReference Include="..\SwitcheoTrader.NetCore.Data.Interfaces\SwitcheoTrader.NetCore.Data.Interfaces.csproj" />
     <ProjectReference Include="..\SwitcheoTrader.NetCore.Entities\SwitcheoTrader.NetCore.Entities.csproj" />
   </ItemGroup>
