@@ -18,3 +18,4 @@ namespace SwitcheoTrader.NetCore.Entities
         public long timestamp { get; set; }
         public bool useSWTH { get; set; }
     }
+}

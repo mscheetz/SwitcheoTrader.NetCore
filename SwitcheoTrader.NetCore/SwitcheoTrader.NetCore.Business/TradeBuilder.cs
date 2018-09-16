@@ -21,7 +21,7 @@ namespace SwitcheoTrader.NetCore.Business
         private IFileRepository _fileRepo;
         private SwitcheoApiClient _switcheo;
         private DateTimeHelper _dtHelper = new DateTimeHelper();
-        private SwitcheoTrader.NetCore.Core.Helper _helper;
+        private Helper _helper;
         private BotSettings _botSettings;
         private string _symbol;
         private string _asset;
@@ -37,7 +37,7 @@ namespace SwitcheoTrader.NetCore.Business
         private decimal _lastSell = 0.00000000M;
         private decimal _lastPrice = 0.00000000M;
         private decimal _lastQty = 0.00000000M;
-        private TradeType _lastTradeType;
+        private Side _lastTradeType;
         private decimal _resistance = 0.00000000M;
         private decimal _support = 0.00000000M;
 
@@ -53,7 +53,7 @@ namespace SwitcheoTrader.NetCore.Business
         {
             _fileRepo = new FileRepository();
             _switcheo = new SwitcheoApiClient();
-            _helper = new SwitcheoTrader.NetCore.Core.Helper();
+            _helper = new Helper();
             SetupBuilder();
         }
 
@@ -103,7 +103,6 @@ namespace SwitcheoTrader.NetCore.Business
             _tradeInformation = new List<TradeInformation>();
             _openOrderList = new List<OpenOrder>();
             _openStopLossList = new List<OpenStopLoss>();
-            _exchBldr.SetExchange(_botSettings);
             SetupRepository();
         }
 
@@ -614,12 +613,12 @@ namespace SwitcheoTrader.NetCore.Business
             }
             else
             {
-                if (_lastTradeType == TradeType.BUY)
+                if (_lastTradeType == Side.buy)
                 {
                     pairQuantity = 0;
                     assetQuantity = _lastQty;
                 }
-                else if (_lastTradeType == TradeType.SELL)
+                else if (_lastTradeType == Side.sell)
                 {
                     pairQuantity = _lastQty;
                     assetQuantity = 0;
@@ -1000,7 +999,7 @@ namespace SwitcheoTrader.NetCore.Business
         /// <param name="sells">Bottom Sell orders</param>
         /// <param name="volume">Volume to trigger</param>
         /// <returns>Boolean if stale mate reached</returns>
-        public bool StaleMateCheck(SwitcheoOrder[] buys, SwitcheoOrder[] sells, decimal volume)
+        public bool StaleMateCheck(SwitcheoOffer[] buys, SwitcheoOffer[] sells, decimal volume)
         {
             if (_botSettings.tradingCompetition)
             {
@@ -1156,7 +1155,7 @@ namespace SwitcheoTrader.NetCore.Business
 
             LogTransaction(_lastTrade);
 
-            _lastQty = GetTradeQuantity(TradeType.SELL, _lastSell);
+            _lastQty = GetTradeQuantity(Side.sell, _lastSell);
 
             UpdateBalances();
 
@@ -1182,7 +1181,7 @@ namespace SwitcheoTrader.NetCore.Business
             Order trade = null;
             while (!tradeComplete && i < 2)
             {
-                trade = MakeTrade(TradeType.BUY, orderPrice);
+                trade = MakeTrade(Side.buy, orderPrice);
 
                 if (trade == null || trade.id == null)
                 {
@@ -1248,7 +1247,7 @@ namespace SwitcheoTrader.NetCore.Business
             {
                 CancelStopLoss();
 
-                trade = MakeTrade(TradeType.SELL, orderPrice);
+                trade = MakeTrade(Side.sell, orderPrice);
 
                 if (trade == null || trade.id == null)
                 {
@@ -1374,10 +1373,9 @@ namespace SwitcheoTrader.NetCore.Business
                 {
                     var cancelTradeParams = new CancelTradeParams
                     {
-                        orderId = trade.orderId,
-                        origClientOrderId = trade.clientOrderId,
-                        symbol = trade.symbol,
-                        timestamp = trade.transactTime,
+                        Id = trade.id,
+                        symbol = _symbol,
+                        timestamp = trade.created_at.ToUnixTimeMilliseconds(),
                         type = trade.side.ToString()
                     };
                     CancelTrade(cancelTradeParams);
@@ -1401,7 +1399,7 @@ namespace SwitcheoTrader.NetCore.Business
             if (orderStatus == null)
                 return false;
 
-            return orderStatus.status == OrderStatus.FILLED ? true : false;
+            return orderStatus.order_status.Equals("completed") ? true : false;
         }
 
         #endregion Validate Trade
@@ -1466,40 +1464,26 @@ namespace SwitcheoTrader.NetCore.Business
         /// <summary>
         /// Get quantity to trade based
         /// </summary>
-        /// <param name="tradeType">TradeType object</param>
+        /// <param name="side">Trade Side</param>
         /// <param name="orderPrice">Requested trade price</param>
         /// <returns>decimal of quantity to purchase</returns>
-        public decimal GetTradeQuantity(TradeType tradeType, decimal orderPrice)
+        public decimal GetTradeQuantity(Side side, decimal orderPrice)
         {
             int roundTo = 1;
             decimal quantity = 0.00000000M;
-            if (tradeType == TradeType.BUY)
+            if (side == Side.buy)
             {
                 var pairBalance = _botBalances.Where(b => b.symbol.Equals(_pair)).FirstOrDefault();
 
                 quantity = pairBalance.quantity / orderPrice;
             }
-            else if (tradeType == TradeType.SELL)
+            else if (side == Side.sell)
             {
                 var symbolBalance = _botBalances.Where(b => b.symbol.Equals(_asset)).FirstOrDefault();
 
                 quantity = symbolBalance.quantity;
-                if (_asset.Equals("BTC"))
-                {
-                    quantity = _helper.RoundDown(quantity, 6);
-                }
             }
 
-            if (_asset.Equals("BTC"))
-            {
-                roundTo = 6;
-            }
-
-            if (_botSettings.exchange == Exchange.GDAX)
-            {
-                // Remove potential trade fee for GDAX trades
-                quantity = quantity - (quantity * _botSettings.tradingFee);
-            }
 
             decimal roundedDown = _helper.RoundDown(quantity, roundTo);
 
@@ -1514,11 +1498,11 @@ namespace SwitcheoTrader.NetCore.Business
         /// Check if mooning
         /// </summary>
         /// <param name="startingPrice">decimal of starting price</param>
-        /// <param name="prevStick">Previous BotStick (default null)</param>
+        /// <param name="prevStick">Previous Candlstick (default null)</param>
         /// <param name="iteration">Int of iteration</param>
         /// <returns>decimal of sell price</returns>
         public decimal OrderBookSellCheck(decimal startingPrice = 0.00000000M
-                                    , BotStick prevStick = null
+                                    , Candlstick prevStick = null
                                     , int iteration = 0)
         {
             var checkToSell = true;
@@ -1562,11 +1546,11 @@ namespace SwitcheoTrader.NetCore.Business
         /// Check if tanking
         /// </summary>
         /// <param name="startingPrice">decimal of starting price</param>
-        /// <param name="prevStick">Previous BotStick (default null)</param>
+        /// <param name="prevStick">Previous Candlstick (default null)</param>
         /// <param name="iteration">Int of iteration</param>
         /// <returns>decimal of buy price</returns>
         public decimal OrderBookBuyCheck(decimal startingPrice = 0.00000000M
-                                    , BotStick prevStick = null
+                                    , Candlstick prevStick = null
                                     , int iteration = 0)
         {
             var checkToBuy = true;
@@ -1611,7 +1595,7 @@ namespace SwitcheoTrader.NetCore.Business
         /// <param name="interval">Trade interval, default 1 minute</param>
         /// <param name="stickCount">Int of sticks to return, default 2</param>
         /// <returns>Candlestick object</returns>
-        public BotStick[] GetNextCandlestick()
+        public Candlstick[] GetNextCandlestick()
         {
             Task.WaitAll(Task.Delay(_botSettings.mooningTankingTime));
 
@@ -1645,8 +1629,7 @@ namespace SwitcheoTrader.NetCore.Business
             var tradeParams = new CancelTradeParams
             {
                 symbol = _symbol,
-                orderId = _openStopLossList[0].orderId,
-                origClientOrderId = _openStopLossList[0].clientOrderId,
+                Id = _openStopLossList[0].id,
                 type = "SELL"
             };
 
@@ -1654,8 +1637,7 @@ namespace SwitcheoTrader.NetCore.Business
 
             var trade = new Order
             {
-                orderId = _openStopLossList[0].orderId,
-                clientOrderId = _openStopLossList[0].clientOrderId
+                id = _openStopLossList[0].id,
             };
             bool stopLossCanceled = false;
             while (!stopLossCanceled)
@@ -1682,8 +1664,8 @@ namespace SwitcheoTrader.NetCore.Business
             var trade = new TradeParams
             {
                 symbol = _symbol,
-                side = TradeType.SELL.ToString(),
-                type = OrderType.STOP_LOSS.ToString(),
+                side = Side.sell,
+                type = "STOP LOSS",
                 quantity = quantity,
                 stopPrice = stopLossPrice,
                 price = stopLossPrice
@@ -1695,9 +1677,8 @@ namespace SwitcheoTrader.NetCore.Business
                 new OpenStopLoss
                 {
                     symbol = _symbol,
-                    clientOrderId = response.clientOrderId,
-                    orderId = response.orderId,
-                    price = response.price,
+                    id = response.id,
+                    price = stopLossPrice,
                     quantity = quantity
                 });
 
@@ -1715,32 +1696,27 @@ namespace SwitcheoTrader.NetCore.Business
         /// <param name="tradeType">TradeType object</param>
         /// <param name="orderPrice">Trade price</param>
         /// <returns>Order object</returns>
-        public Order MakeTrade(TradeType tradeType, decimal orderPrice)
+        public Order MakeTrade(Side side, decimal orderPrice)
         {
             Order response = null;
             int i = 0;
             while (response == null && i < 5)
             {
-                //if (i > 0)
-                //{
-                //    orderPrice = GetPricePadding(tradeType, orderPrice);
-                //}
-
-                var quantity = GetTradeQuantity(tradeType, orderPrice);
+                var quantity = GetTradeQuantity(side, orderPrice);
                 if (i > 0)
                 {
                     quantity = quantity - i;
                 }
                 _lastPrice = orderPrice;
                 _lastQty = quantity;
-                _lastTradeType = tradeType;
+                _lastTradeType = side;
 
                 var trade = new TradeParams
                 {
                     price = orderPrice,
                     symbol = _symbol,
-                    side = tradeType.ToString(),
-                    type = OrderType.LIMIT.ToString(),
+                    side = side,
+                    type = "limit",
                     quantity = quantity,
                     timeInForce = "GTC"
                 };
@@ -1760,22 +1736,6 @@ namespace SwitcheoTrader.NetCore.Business
         /// <returns>Update order price</returns>
         public decimal GetPricePadding(TradeType tradeType, decimal orderPrice)
         {
-            if (_botSettings.exchange == Exchange.GDAX)
-            {
-                var pricePadding = 0.00M;
-
-                if (tradeType == TradeType.BUY || tradeType == TradeType.VOLUMEBUY || tradeType == TradeType.VOLUMESELLBUYOFF)
-                {
-                    pricePadding = -0.01M;
-                }
-                else if (tradeType == TradeType.SELL || tradeType == TradeType.VOLUMESELL || tradeType == TradeType.VOLUMEBUYSELLOFF)
-                {
-                    pricePadding = 0.01M;
-                }
-
-                orderPrice += pricePadding;
-            }
-
             return orderPrice;
         }
 
@@ -1785,13 +1745,12 @@ namespace SwitcheoTrader.NetCore.Business
         /// <param name="orderId">OrderId to cancel</param>
         /// <param name="origClientOrderId">ClientOrderId to cancel</param>
         /// <param name="tradeType">Trade type</param>
-        public void CancelTrade(long orderId, string origClientOrderId, string tradeType = "")
+        public void CancelTrade(string orderId, string tradeType = "")
         {
             var tradeParams = new CancelTradeParams
             {
                 symbol = _symbol,
-                orderId = orderId,
-                origClientOrderId = origClientOrderId,
+                Id = orderId,
                 type = tradeType
             };
 
@@ -1804,24 +1763,27 @@ namespace SwitcheoTrader.NetCore.Business
         /// <returns>Boolen when complete</returns>
         public bool CancelOpenOrders()
         {
-            var openOrders = _switcheo.GetOpenOrders();
+            var openOrders = _switcheo.GetOpenSwitcheoOrders();
 
             while (openOrders != null && openOrders.Count() > 0)
             {
                 for (var i = 0; i < openOrders.Length; i++)
                 {
-                    var signal = new TradeSignal
+                    if (openOrders[i].pair.Equals(_symbol))
                     {
-                        pair = _symbol,
-                        price = openOrders[i].price,
-                        signal = _signalType,
-                        tradeType = TradeType.CANCELTRADE,
-                        transactionDate = DateTime.UtcNow,
-                    };
-                    _fileRepo.LogSignal(signal);
-                    CancelTrade(openOrders[i].orderId, openOrders[i].clientOrderId, openOrders[i].side.ToString());
+                        var signal = new TradeSignal
+                        {
+                            pair = _symbol,
+                            price = openOrders[i].price,
+                            signal = _signalType,
+                            tradeType = TradeType.CANCELTRADE,
+                            transactionDate = DateTime.UtcNow,
+                        };
+                        _fileRepo.LogSignal(signal);
+                        CancelTrade(openOrders[i].id, openOrders[i].side);
+                    }
                 }
-                openOrders = _switcheo.GetOpenOrders();
+                openOrders = _switcheo.GetOpenSwitcheoOrders();
             }
 
             return true;
@@ -1840,8 +1802,8 @@ namespace SwitcheoTrader.NetCore.Business
                 return new decimal[] { 0.00000000M, 0.00000000M };
             }
 
-            var lastBuy = orders.Where(o => o.side == TradeType.BUY).Select(o => o.price).FirstOrDefault();
-            var lastSell = orders.Where(o => o.side == TradeType.SELL).Select(o => o.price).FirstOrDefault();
+            var lastBuy = orders.Where(o => o.side.Equals("buy")).Select(o => o.price).FirstOrDefault();
+            var lastSell = orders.Where(o => o.side.Equals("sell")).Select(o => o.price).FirstOrDefault();
 
             return new decimal[]
             {
@@ -1850,52 +1812,72 @@ namespace SwitcheoTrader.NetCore.Business
             };
         }
 
-        public Order[] GetLatestOrders(string symbol)
+        /// <summary>
+        /// Get orders for a pair
+        /// </summary>
+        /// <param name="symbol">String of symbol</param>
+        /// <returns>SwitcheoOrder array</returns>
+        public SwitcheoOrder[] GetOrders(string symbol)
         {
-            //TODO: finish
-            return new Order[0];
+            int i = 0;
+            var orders = _switcheo.GetSwitcheoOrders(symbol);
 
-            // FROM BOT
-            //var response = GetOrders(symbol);
-            //int i = 0;
-            //while (response == null && i < 3)
-            //{
-            //    response = GetOrders(symbol);
-            //    i++;
-            //}
+            while (orders == null && i < 3)
+            {
+                orders = _switcheo.GetSwitcheoOrders(symbol);
+                i++;
+            }
 
-            //if (response == null)
-            //{
-            //    return null;
-            //}
+            return orders;
+        }
 
-            //var orderReverse = response.Where(o => o.status == OrderStatus.FILLED)
-            //                            .OrderByDescending(o => o.time).ToArray();
+        /// <summary>
+        /// Get Latest Buy and Sell orders that were filled
+        /// </summary>
+        /// <param name="symbol">String of trading symbol</param>
+        /// <returns>Array of SwitcheoOrder</returns>
+        public SwitcheoOrder[] GetLatestOrders(string symbol)
+        {
+            var response = GetOrders(symbol);
+            int i = 0;
+            while (response == null && i < 3)
+            {
+                response = GetOrders(symbol);
+                i++;
+            }
 
-            //var orderList = new List<OrderResponse>();
+            if (response == null)
+            {
+                return null;
+            }
 
-            //var buyFound = false;
-            //var sellFound = false;
-            //for (i = 0; i < orderReverse.Length; i++)
-            //{
-            //    if (orderReverse[i].side == TradeType.BUY && !buyFound)
-            //    {
-            //        orderList.Add(orderReverse[i]);
-            //        buyFound = true;
-            //    }
-            //    if (orderReverse[i].side == TradeType.SELL && !sellFound)
-            //    {
-            //        orderList.Add(orderReverse[i]);
-            //        sellFound = true;
-            //    }
+            var orderReverse = response.Where(o => o.orderStatus.Equals("completed"))
+                                        .OrderByDescending(o => o.createdAt).ToArray();
 
-            //    if (buyFound && sellFound)
-            //    {
-            //        break;
-            //    }
-            //}
+            var orderList = new List<SwitcheoOrder>();
 
-            //return orderList.ToArray();
+            var buyFound = false;
+            var sellFound = false;
+            for (i = 0; i < orderReverse.Length; i++)
+            {
+                if (orderReverse[i].side.Equals("buy") && !buyFound)
+                {
+                    orderList.Add(orderReverse[i]);
+                    buyFound = true;
+                }
+                if (orderReverse[i].side.Equals("sell") && !sellFound)
+                {
+                    orderList.Add(orderReverse[i]);
+                    sellFound = true;
+                }
+
+                if (buyFound && sellFound)
+                {
+                    break;
+                }
+            }
+
+            return orderList.ToArray();
         }
 
         /// <summary>
@@ -1928,12 +1910,12 @@ namespace SwitcheoTrader.NetCore.Business
         /// </summary>
         /// <param name="id">Id of order to cancel</param>
         /// <returns>Order object</returns>
-        public Order CancelTrade(string id)
+        public Order CancelTrade(CancelTradeParams cancelTradeParams)
         {
             if (_botSettings.tradingStatus == TradeStatus.LiveTrading)
-                return _switcheo.CancelOrder(id);
+                return _switcheo.CancelOrder(cancelTradeParams.Id);
             else if (_botSettings.tradingStatus == TradeStatus.PaperTrading)
-                return CancelPaperTrade(id);
+                return CancelPaperTrade(cancelTradeParams.Id);
             else
                 return null;
         }
