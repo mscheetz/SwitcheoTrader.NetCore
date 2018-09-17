@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SwitcheoTrader.NetCore.Business.Interfaces\SwitcheoTrader.NetCore.Business.Interfaces.csproj" />
+    <ProjectReference Include="..\SwitcheoTrader.NetCore.Entities\SwitcheoTrader.NetCore.Entities.csproj" />
+  </ItemGroup>
+
+</Project>

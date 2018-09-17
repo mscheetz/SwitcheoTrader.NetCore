@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2018
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Data", "SwitcheoTrader.NetCore\SwitcheoTrader.NetCore.Data.csproj", "{CD65283E-3155-4C9E-A7C7-8BAEB6BC960E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwitcheoTrader.NetCore.Data", "SwitcheoTrader.NetCore\SwitcheoTrader.NetCore.Data.csproj", "{CD65283E-3155-4C9E-A7C7-8BAEB6BC960E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{9DE86483-0AE8-4F03-B811-EEC0B76E43F4}"
 EndProject
@@ -11,19 +11,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Business", "Business", "{1A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{0E8532E0-91DD-43F2-9AB7-2C3218008ADE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Business", "SwitcheoTrader.NetCore.Business\SwitcheoTrader.NetCore.Business.csproj", "{86699513-F8FB-4F09-A4BA-7638262618F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwitcheoTrader.NetCore.Business", "SwitcheoTrader.NetCore.Business\SwitcheoTrader.NetCore.Business.csproj", "{86699513-F8FB-4F09-A4BA-7638262618F3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Api", "SwitcheoTrader.NetCore.Api\SwitcheoTrader.NetCore.Api.csproj", "{F32C08AB-F7B5-4155-8B7C-3CA14E644FB4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwitcheoTrader.NetCore.Api", "SwitcheoTrader.NetCore.Api\SwitcheoTrader.NetCore.Api.csproj", "{F32C08AB-F7B5-4155-8B7C-3CA14E644FB4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Data.Interfaces", "SwitcheoTrader.NetCore.Data.Interfaces\SwitcheoTrader.NetCore.Data.Interfaces.csproj", "{EF250EAB-405D-43F7-BA56-6E7B974FCFDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwitcheoTrader.NetCore.Data.Interfaces", "SwitcheoTrader.NetCore.Data.Interfaces\SwitcheoTrader.NetCore.Data.Interfaces.csproj", "{EF250EAB-405D-43F7-BA56-6E7B974FCFDE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Business.Interfaces", "SwitcheoTrader.NetCore.Business.Interfaces\SwitcheoTrader.NetCore.Business.Interfaces.csproj", "{E0E18682-AB71-4CDD-92D0-FF0BE3CE5565}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwitcheoTrader.NetCore.Business.Interfaces", "SwitcheoTrader.NetCore.Business.Interfaces\SwitcheoTrader.NetCore.Business.Interfaces.csproj", "{E0E18682-AB71-4CDD-92D0-FF0BE3CE5565}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{C9116ECE-BF0F-4CEA-B147-25BA7DD2E7AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Core", "SwitcheoTrader.NetCore.Core\SwitcheoTrader.NetCore.Core.csproj", "{3C58B220-0979-4B78-9D20-FF018549892F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwitcheoTrader.NetCore.Core", "SwitcheoTrader.NetCore.Core\SwitcheoTrader.NetCore.Core.csproj", "{3C58B220-0979-4B78-9D20-FF018549892F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Entities", "SwitcheoTrader.NetCore.Entities\SwitcheoTrader.NetCore.Entities.csproj", "{F4ADBBB7-E43A-4DD8-BC2B-E180BA573D83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwitcheoTrader.NetCore.Entities", "SwitcheoTrader.NetCore.Entities\SwitcheoTrader.NetCore.Entities.csproj", "{F4ADBBB7-E43A-4DD8-BC2B-E180BA573D83}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitcheoTrader.NetCore.Manager", "SwitcheoTrader.NetCore.Manager\SwitcheoTrader.NetCore.Manager.csproj", "{E458E536-2597-4443-96EC-C8A395C338A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,10 @@ Global
 		{F4ADBBB7-E43A-4DD8-BC2B-E180BA573D83}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4ADBBB7-E43A-4DD8-BC2B-E180BA573D83}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4ADBBB7-E43A-4DD8-BC2B-E180BA573D83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E458E536-2597-4443-96EC-C8A395C338A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E458E536-2597-4443-96EC-C8A395C338A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E458E536-2597-4443-96EC-C8A395C338A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E458E536-2597-4443-96EC-C8A395C338A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,6 +77,7 @@ Global
 		{E0E18682-AB71-4CDD-92D0-FF0BE3CE5565} = {1A24C772-C42B-41D2-93E4-780D1F210828}
 		{3C58B220-0979-4B78-9D20-FF018549892F} = {C9116ECE-BF0F-4CEA-B147-25BA7DD2E7AC}
 		{F4ADBBB7-E43A-4DD8-BC2B-E180BA573D83} = {1A24C772-C42B-41D2-93E4-780D1F210828}
+		{E458E536-2597-4443-96EC-C8A395C338A6} = {1A24C772-C42B-41D2-93E4-780D1F210828}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {55014A06-568D-4011-91A7-D6C7D438731E}
