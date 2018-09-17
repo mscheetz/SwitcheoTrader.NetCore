@@ -52,8 +52,6 @@ namespace SwitcheoTrader.NetCore.Business
         public TradeBuilder()
         {
             _fileRepo = new FileRepository();
-            _switcheo = new SwitcheoApiClient();
-            _helper = new Helper();
             SetupBuilder();
         }
 
@@ -64,7 +62,6 @@ namespace SwitcheoTrader.NetCore.Business
         public TradeBuilder(IFileRepository fileRepo)
         {
             _fileRepo = fileRepo;
-            _helper = new SwitcheoTrader.NetCore.Core.Helper();
             SetupBuilder();
         }
 
@@ -76,7 +73,6 @@ namespace SwitcheoTrader.NetCore.Business
         {
             _fileRepo = fileRepo;
             _switcheo = switcheo;
-            _helper = new SwitcheoTrader.NetCore.Core.Helper();
             SetupBuilder();
         }
 
@@ -88,7 +84,6 @@ namespace SwitcheoTrader.NetCore.Business
         {
             _fileRepo = fileRepo;
             _switcheo = switcheo;
-            _helper = new SwitcheoTrader.NetCore.Core.Helper();
             SetupBuilder(botBalanceList);
         }
 
@@ -98,6 +93,7 @@ namespace SwitcheoTrader.NetCore.Business
 
         private void SetupBuilder()
         {
+            _helper = new Helper();
             _botSettings = GetBotSettings();
             _botBalances = new List<BotBalance>();
             _tradeInformation = new List<TradeInformation>();
@@ -157,6 +153,15 @@ namespace SwitcheoTrader.NetCore.Business
             _botSettings.botPassword = password;
 
             return _botSettings.botPassword.Equals(password);
+        }
+
+        /// <summary>
+        /// Get Neo Address
+        /// </summary>
+        /// <returns>String of address</returns>
+        public string GetNeoAddress()
+        {
+            return _switcheo.GetWallet().address;
         }
 
         /// <summary>
@@ -403,11 +408,14 @@ namespace SwitcheoTrader.NetCore.Business
         /// <returns>Boolean when complete</returns>
         public bool SetupRepository()
         {
-            var wallet = _switcheo.GetWallet();
+            if (_switcheo != null)
+            {
+                var wallet = _switcheo.GetWallet();
 
-            if (wallet.privateKey != null)
-                return true;
+                if (wallet.privateKey != null)
+                    return true;
 
+            }
             var apiInfo = GetApiInformation();
 
             _switcheo = new SwitcheoApiClient(apiInfo.wif);

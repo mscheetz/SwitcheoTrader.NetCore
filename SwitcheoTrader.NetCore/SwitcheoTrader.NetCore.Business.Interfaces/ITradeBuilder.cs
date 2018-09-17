@@ -34,6 +34,12 @@ namespace SwitcheoTrader.NetCore.Business.Interfaces
         bool UpdatePassword(string password);
 
         /// <summary>
+        /// Get Neo Address
+        /// </summary>
+        /// <returns>String of address</returns>
+        string GetNeoAddress();
+
+        /// <summary>
         /// Get BotSettings
         /// </summary>
         /// <returns>BotSettings object</returns>
@@ -84,13 +90,7 @@ namespace SwitcheoTrader.NetCore.Business.Interfaces
         /// <param name="apiInformation">Updated ApiInformation</param>
         /// <returns>Boolean when complete</returns>
         bool SetApiInformation(ApiInformation apiInformation);
-
-        /// <summary>
-        /// Get Api Key from disc
-        /// </summary>
-        /// <returns>String of api key</returns>
-        string GetApiKey();
-
+        
         /// <summary>
         /// Update balances and get initial trade type
         /// </summary>
@@ -291,10 +291,10 @@ namespace SwitcheoTrader.NetCore.Business.Interfaces
         /// <summary>
         /// Get quantity to trade based
         /// </summary>
-        /// <param name="tradeType">TradeType object</param>
+        /// <param name="side">Trade Side</param>
         /// <param name="orderPrice">Requested trade price</param>
         /// <returns>decimal of quantity to purchase</returns>
-        decimal GetTradeQuantity(TradeType tradeType, decimal orderPrice);
+        decimal GetTradeQuantity(Side side, decimal orderPrice);
 
         /// <summary>
         /// Cancel a stop loss
@@ -324,7 +324,7 @@ namespace SwitcheoTrader.NetCore.Business.Interfaces
         /// <param name="orderId">OrderId to cancel</param>
         /// <param name="origClientOrderId">ClientOrderId to cancel</param>
         /// <param name="tradeType">Trade type</param>
-        void CancelTrade(long orderId, string origClientOrderId, string tradeType = "");
+        void CancelTrade(string orderId, string tradeType = "");
 
         /// <summary>
         /// Cancel all open orders for the current trading pair
@@ -336,21 +336,21 @@ namespace SwitcheoTrader.NetCore.Business.Interfaces
         /// Cancel a trade
         /// </summary>
         /// <param name="tradeParams">CancelTrade parameters</param>
-        /// <returns>TradeResponse object</returns>
+        /// <returns>Order object</returns>
         Order CancelTrade(CancelTradeParams tradeParams);
 
         /// <summary>
         /// Cancel a paper trade for testing purposes
         /// </summary>
-        /// <param name="tradeParams">Trade parameters</param>
-        /// <returns>TradeResponse object</returns>
-        Order CancelPaperTrade(CancelTradeParams tradeParams);
+        /// <param name="id">Id of order to cancel</param>
+        /// <returns>Order object</returns>
+        Order CancelPaperTrade(string id);
 
         /// <summary>
         /// Get status of a trade
         /// </summary>
         /// <param name="trade">TradeResponse of trade</param>
-        /// <returns>OrderResponse</returns>
+        /// <returns>Order object</returns>
         Order GetOrderStatus(Order trade);
 
         /// <summary>
@@ -369,8 +369,8 @@ namespace SwitcheoTrader.NetCore.Business.Interfaces
         /// Get status of a paper trade
         /// </summary>
         /// <param name="orderId">OrderId of trade</param>
-        /// <returns>OrderResponse</returns>
-        Order GetPaperOrderStatus(long orderId);
+        /// <returns>Order object</returns>
+        Order GetPaperOrderStatus(string orderId);
 
         #region Moon and Tank Check
 
@@ -403,7 +403,7 @@ namespace SwitcheoTrader.NetCore.Business.Interfaces
         /// <param name="stickCount">Int of sticks to return, default 2</param>
         /// <returns>Candlestick object</returns>
         Candlstick[] GetNextCandlestick();
-
+        
         #endregion Moon and Tank Check
     }
 }
