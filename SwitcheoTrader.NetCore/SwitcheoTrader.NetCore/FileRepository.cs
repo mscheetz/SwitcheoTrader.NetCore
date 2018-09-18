@@ -10,7 +10,7 @@ namespace SwitcheoTrader.NetCore.Data
     public class FileRepository : IFileRepository
     {
         private string balancePath = "balance.log";
-        private string configPath = "apiConfig.json";
+        private string configPath = "walletConfig.json";
         private string settingsPath = "botSettings.json";
         private string transactionPath = "transaction.log";
         private string errorPath = "error.log";
