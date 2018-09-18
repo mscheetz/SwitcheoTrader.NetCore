@@ -35,8 +35,9 @@ namespace SwitcheoTrader.NetCore.Api
             services.AddMvc();
             services.AddScoped<IFileRepository, FileRepository>();
             services.AddTransient<IOrderBookTradeBuilder, OrderBookTradeBuilder>();
-            services.AddTransient<ITradeBuilder, TradeBuilder>();
             services.AddTransient<ISwitcheoTraderService, SwitcheoTraderManager>();
+            services.AddTransient<ITradeBuilder, TradeBuilder>();
+            services.AddTransient<IVolumeTradeBuilder, VolumeTradeBuilder>();
 
             services.AddSwaggerGen(c =>
             {

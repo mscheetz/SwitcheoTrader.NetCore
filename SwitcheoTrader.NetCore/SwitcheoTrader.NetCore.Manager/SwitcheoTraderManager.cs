@@ -11,13 +11,16 @@ namespace SwitcheoTrader.NetCore.Manager
     {
         private IOrderBookTradeBuilder _orderBookTradeBuilder;
         private ITradeBuilder _tradeBuilder;
+        private IVolumeTradeBuilder _volumeTradeBuilder;
         private BotConfig _botConfig;
 
         public SwitcheoTraderManager(IOrderBookTradeBuilder orderBookTradeBuilder,
-                              ITradeBuilder tradeBuilder)
+                                     ITradeBuilder tradeBuilder,
+                                     IVolumeTradeBuilder volumeTradeBuilder)
         {
             this._orderBookTradeBuilder = orderBookTradeBuilder;
             this._tradeBuilder = tradeBuilder;
+            this._volumeTradeBuilder = volumeTradeBuilder;
 
             _botConfig = _tradeBuilder.GetBotConfig();
         }
@@ -108,7 +111,11 @@ namespace SwitcheoTrader.NetCore.Manager
         public bool StartBot(Interval interval)
         {
             ServiceReady();
-            _orderBookTradeBuilder.StartTrading(interval);
+            if (_botConfig.tradingStrategy == Strategy.OrderBook)
+                _orderBookTradeBuilder.StartTrading(interval);
+            else if (_botConfig.tradingStrategy == Strategy.Volume)
+                _volumeTradeBuilder.StartTrading(interval);
+
 
             return true;
         }
