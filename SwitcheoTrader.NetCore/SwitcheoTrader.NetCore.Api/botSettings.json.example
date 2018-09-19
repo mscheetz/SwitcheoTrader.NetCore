@@ -1,0 +1,29 @@
+﻿{
+  "botPassword": "8g&C4ZR", // password for using bot
+  "exchange": "SWITCHEO", // SWITCHEO, NONE
+  "tradingPair": "SWTH_NEO", // Trading pair
+  "tradingStrategy": "OrderBook", // Volume,OrderBook
+  "tradingStatus": "LiveTrading", // LiveTrading,PaperTrading
+  "buyPercent": 0.25, // Buy percentage (percentage trading)
+  "sellPercent": 0.25, // Sell percentage (percentage trading)
+  "stopLoss": 2.0, // Stop loss percent
+  "stopLossCheck": false, // Check for stop loss?
+  "tradePercent": 100.0, // Percent of holdings to trade
+  "priceCheck": 60000, // Price check in milliseconds
+  "chartInterval": "FiveM", // OneM,ThreeM,FiveM,FifteenM,ThirtyM,OneH,TwoH,FourH,SixH,EightH,TwelveH,OneD,ThreeD,OneW,OneMo
+  "startBotAutomatically": false, // Start bot automatically? (may not work)
+  "startingAmount": 200, // Starting pair amount for paper trading will be the 2nd value *BTC or *USD
+  "mooningTankingTime": 2000, // Milliseconds to re-check if price is mooning/tanking
+  "mooningTankingPercent": 100.0, // Volume percent increase from previous candle
+  "lastBuy": 0.0, // Last buy price (will be pulled from trade history)
+  "lastSell": 0.0, // Last sell price (will be pulled from trade history)
+  "tradingFee": 0.003, // Trading fee (not currently used)
+  "tradeValidationCheck": 2000, // Milliseconds to re-check if a trade has been executed
+  "orderBookQuantity": 0.15, // Total volume at a price to trigger an order book buy/sell
+  "traderResetInterval": 30, // # of cycles to verify trading type, reload bot settings (if they have been updated)
+  "runBot": true, // Run the bot?
+  "tradingCompetition": false, // Is this for a trading competition?
+  "tradingCompetitionEndTimeStamp": 1532102400000, // UTC Unix time to milliseconds of end of trading competition
+  "openOrderTimeMS": 300000, // For order book trading, cancel an open trade if it has been open for this many milliseconds
+  "samePriceLimit": 2 // For order book trading, sell if price has been stagnant for this many cycles
+}
