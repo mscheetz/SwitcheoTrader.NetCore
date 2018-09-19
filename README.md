@@ -1,7 +1,7 @@
 # SwitcheoTrader.NetCore
 Trading bot for Switcheo exchange
 
-create walletConfig.json in the root directory of the application with your NEO wallet WIF (private key):
+create walletConfig.json in the root directory of the application with your NEO wallet WIF (private key begining with an **L**):
 ```
 {
   "wif": ""
@@ -23,7 +23,7 @@ create botSettings.json in the root directory of the application with bot settin
   "priceCheck": 60000,                  -- time to check updated price (ms)
   "chartInterval": "FiveM",             -- candlestick size OneM, FiveM, ...
   "startBotAutomatically": true,        -- Start the bot automatically?
-  "startingAmount": 200.0,              -- PaperTrading starting amount (want amount)
+  "startingAmount": 200.0,              -- PaperTrading starting amount (want amount, NEO in this example)
   "mooningTankingTime": 1500,           -- Time to check if price is mooning/tanking (ms)
   "mooningTankingPercent": 0.0,         -- % change to count as mooning/tanking
   "exchange": "SWITCHEO",               -- Exchange
@@ -36,8 +36,18 @@ create botSettings.json in the root directory of the application with bot settin
   "traderResetInterval": 30,            -- # of cycles before re-validating settings
   "tradingCompetition": true,           -- trading competition?
   "tradingCompetitionEndTimeStamp": 0,  -- end of trading competition (unix timestamp)
-  "openOrderTimeMS": 300000,            -- TODO
-  "samePriceLimit": 2                   -- TODO
+  "openOrderTimeMS": 300000,            -- For order book trading, cancel an open trade if it has been open for this long (ms)
+  "samePriceLimit": 2                   -- For order book trading, sell if price has been stagnant for this many cycles
 }
 ```
+## Trading Strategies
+  * OrderBook: trading based on orderbook volume 
+  * Volume: trading based on spikes in volume 
 
+## Trading Status
+  * PaperTrading: fake trading to test out trading settings 
+  * LiveTrading: no explanation needed 
+  
+## Using app
+  * Run locally in Debug mode using Visual Studio 2017 
+  * Deploy to a server, I have been successful using AWS: Elastic Beanstalk
